@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from ikpy.chain import Chain
 from ikpy.link import OriginLink, URDFLink
 import numpy as np
-
+import plot_utils 
 test_link = Chain(name='test_arm', links=[
     OriginLink(),
     URDFLink(
@@ -26,20 +26,36 @@ import matplotlib.pyplot
 from mpl_toolkits.mplot3d import Axes3D
 ax = matplotlib.pyplot.figure().add_subplot(111, projection='3d')  #삼차원 plot을 통해 시각화 
 
-
 ################
 ## 정기구학 연습 ##
 ################
 
 test_link.plot([0,30*np.pi/180,0], ax) # 정해놓은 축과 좌표계를 바탕으로 각 조인트의 각도를 0도, 30도, 0도로 설정해본 예시
-matplotlib.pyplot.show()
 
 ################
 ## 역기구학 연습 ##
 ################
 
-target_vector  = [ 1, 0, 0]  # 목표로 하는 좌표값을 (1,0,0)으로 설정한 에시
-print("The angles of each joints are : ", 180*(test_link.inverse_kinematics(target_vector))/np.pi)  # 역기구학을 통해 계산된 값을 degree units으로 반환받음
+target_vector  = [ 2, 0, 0]  # 목표로 하는 좌표값을 (1,0,0)으로 설정한 에시
+target_frame = np.eye(4)
+target_frame[:3, 3] = target_vector
+
+real_frame  = test_link.forward_kinematics(test_link.inverse_kinematics(target_vector))
+print("--> Computed Position Vector : %s" % real_frame[:3, 3])
+print("--> Original Position Vector : %s" % target_frame[:3, 3])
+test_link.plot(test_link.inverse_kinematics(target_vector), ax, target=target_vector)
+matplotlib.pyplot.show()
+
+if (round(real_frame[0, 3],2)==round(target_frame[0, 3],2)):
+    if (round(real_frame[1, 3],2)==round(target_frame[1, 3],2)):
+        if (round(real_frame[2, 3],2)==round(target_frame[2, 3],2)):
+            print("The angles of each joints are : ", 180*(test_link.inverse_kinematics(target_vector))/np.pi)
+        else: 
+            print("Error: Invalid Position Vector was targeted")  
+    else: 
+      print("Error: Invalid Position Vector was targeted")  
+else: 
+  print("Error: Invalid Position Vector was targeted")  
 
 # 해당 라이브러리를 사용하면서 발견한 문제점
 # 1. 역기구학 사용시, 도달이 불가능한 점을 목표로 잡아도, 이에 대해 Error를 출력하지 않고, 나름대로, 연장선을 긋다보면 결국 그 점에 도달할 수 있는 그런 결과를 출력한다는 점.
